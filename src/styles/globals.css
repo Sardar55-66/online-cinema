@@ -1,0 +1,101 @@
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+  color: #ffffff;
+  background-color: #000000;
+}
+
+/* Переопределение цвета для текста ошибок */
+.text-red-500,
+.text-red-700 {
+  color: #ef4444 !important;
+}
+
+.text-red-700 {
+  color: #b91c1c !important;
+}
+
+a {
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a:hover {
+  color: #8982824f;
+  text-decoration: none;
+}
+
+/* Улучшенные стили для форм */
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* анимация для toast уведомлений */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* анимированные стили для кнопок */
+.MuiButton-root {
+  background: black !important;
+  color: white !important;
+  border: 1px solid white !important;
+  transition: all 0.3s ease !important;
+}
+
+.MuiButton-root:hover {
+  box-shadow: 0 0 10px 2px white !important;
+}
+
+.MuiButton-root,
+.MuiButton-root span {
+  font-size: 12px !important;
+}
