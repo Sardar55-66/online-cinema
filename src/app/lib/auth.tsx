@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { setGlobalLogout } from '@/lib/apiClient';
+import { API_ENDPOINTS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/constants';
 
 export interface User {
   id: number;
@@ -17,6 +18,29 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'user';
+
+const loadUserFromStorage = (): User | null => {
+  const savedUser = localStorage.getItem(STORAGE_KEY);
+  if (!savedUser) return null;
+
+  try {
+    return JSON.parse(savedUser);
+  } catch (error) {
+    console.error('Failed to parse user from storage:', error);
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
+const saveUserToStorage = (user: User): void => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+};
+
+const removeUserFromStorage = (): void => {
+  localStorage.removeItem(STORAGE_KEY);
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }): React.ReactElement => {
@@ -25,36 +49,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   // Проверяем сохраненную сессию при загрузке
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-      } catch (_error) {
-        localStorage.removeItem('user');
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
+    const loadedUser = loadUserFromStorage();
+    setUser(loadedUser);
     setIsLoading(false);
   }, []);
 
-  // слушаем изменения в localStorage для автоматического обновления состояния
+  // Слушаем изменения в localStorage для автоматического обновления состояния
   useEffect(() => {
     const handleStorageChange = () => {
-      const savedUser = localStorage.getItem('user');
-      if (savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          setUser(parsedUser);
-        } catch (_error) {
-          localStorage.removeItem('user');
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+      const loadedUser = loadUserFromStorage();
+      setUser(loadedUser);
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -64,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/proxy/login', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,12 +77,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       });
 
       if (!response.ok) {
-        throw new Error('Неверный логин или пароль. Проверьте введенные данные и попробуйте снова');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || ERROR_MESSAGES.LOGIN_FAILED);
       }
 
-      const userData = await response.json();
+      const userData: User = await response.json();
       setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
+      saveUserToStorage(userData);
     } finally {
       setIsLoading(false);
     }
@@ -87,21 +92,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const register = async (username: string, password: string, passwordConfirmation: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/proxy/register', {
+      const response = await fetch(API_ENDPOINTS.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, passwordConfirmation }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Ошибка регистрации');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || ERROR_MESSAGES.REGISTRATION_FAILED);
       }
 
-      // после успешной регистрации автоматически логинимся
-      await login(username, password);
+      const userData: User = await response.json();
+      setUser(userData);
+      saveUserToStorage(userData);
     } finally {
       setIsLoading(false);
     }
@@ -109,14 +115,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
-    // используем router.push вместо window.location.href для корректного обновления состояния
+    removeUserFromStorage();
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
   };
 
-  // регистрируем функцию logout в apiClient для автоматического разлогина
+  // Регистрируем функцию logout в apiClient для автоматического разлогина
   useEffect(() => {
     setGlobalLogout(logout);
   }, []);

@@ -29,7 +29,7 @@ export default function CinemasPage() {
                   <td className="p-4 text-white">
                     <p className='my-[20px]'>{cinema.name}</p>
                   </td>
-                  <td className="p-4 text-white">{(cinema as any)?.address || '—'}</td>
+                  <td className="p-4 text-white">—</td>
                   <td>
                     <Link href={`/cinemas/${cinema.id}`}>
                       <Button

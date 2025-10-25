@@ -1,6 +1,7 @@
 'use client';
 
 import type { Seat, SeatFromAPI } from '@/types';
+import { SEAT_MAP, SEAT_COLORS, TIME } from '@/constants';
 
 interface SeatMapProps {
     rows: number;
@@ -17,11 +18,6 @@ export function SeatMap({
     onSeatSelect,
     selectedSeats,
 }: SeatMapProps) {
-    // Фиксированное количество рядов и мест
-    const FIXED_ROWS = 6;
-    const FIXED_SEATS_PER_ROW = 10;
-
-
     const isSeatBooked = (row: number, seat: number) => {
         return bookedSeats.some((s) => s.rowNumber === row && s.seatNumber === seat);
     };
@@ -45,8 +41,8 @@ export function SeatMap({
 
     const getSeatStyle = (row: number, seat: number): React.CSSProperties => {
         const baseStyle: React.CSSProperties = {
-            width: '40px',
-            height: '40px',
+            width: `${SEAT_MAP.SEAT_SIZE_PX}px`,
+            height: `${SEAT_MAP.SEAT_SIZE_PX}px`,
             borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
@@ -62,8 +58,8 @@ export function SeatMap({
         if (isSeatBooked(row, seat)) {
             return {
                 ...baseStyle,
-                backgroundColor: '#E57373',
-                borderColor: '#E57373',
+                backgroundColor: SEAT_COLORS.BOOKED_BACKGROUND,
+                borderColor: SEAT_COLORS.BOOKED_BORDER,
                 cursor: 'not-allowed',
             };
         }
@@ -71,67 +67,59 @@ export function SeatMap({
         if (isSeatSelected(row, seat)) {
             return {
                 ...baseStyle,
-                backgroundColor: '#64B5F6',
-                borderColor: '#64B5F6',
+                backgroundColor: SEAT_COLORS.SELECTED_BACKGROUND,
+                borderColor: SEAT_COLORS.SELECTED_BORDER,
                 cursor: 'pointer',
             };
         }
 
         return {
             ...baseStyle,
-            backgroundColor: 'transparent',
-            borderColor: '#616161',
+            backgroundColor: SEAT_COLORS.AVAILABLE_BACKGROUND,
+            borderColor: SEAT_COLORS.AVAILABLE_BORDER,
             cursor: 'pointer',
         };
     };
 
     return (
-        <div style={{
-            borderRadius: '8px',
-            padding: '24px',
-        }}>
+        <div
+            style={{
+                borderRadius: '8px',
+                padding: `${SEAT_MAP.PADDING}px`,
+            }}
+        >
             {/* Сетка мест */}
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '20px',
-            }}>
-                {Array.from({ length: FIXED_ROWS }, (_, rowIndex) => (
-                    <div
-                        key={rowIndex}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '20px',
-                        }}
-                    >
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: `${SEAT_MAP.ROW_GAP}px`,
+                }}
+            >
+                {Array.from({ length: rows }, (_, rowIndex) => (
+                    <div key={rowIndex} style={{ display: 'flex', alignItems: 'center', gap: `${SEAT_MAP.ROW_GAP}px` }}>
                         {/* Номер ряда */}
-                        <div style={{
-                            width: '40px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#999',
-                            textAlign: 'right',
-                        }}>
+                        <div
+                            style={{
+                                width: `${SEAT_MAP.SEAT_SIZE_PX}px`,
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: SEAT_COLORS.TEXT_COLOR,
+                                textAlign: 'right',
+                            }}
+                        >
                             ряд {rowIndex + 1}
                         </div>
 
                         {/* Места в ряду */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '20px',
-                        }}>
-                            {Array.from({ length: FIXED_SEATS_PER_ROW }, (_, seatIndex) => {
+                        <div style={{ display: 'flex', gap: `${SEAT_MAP.SEAT_GAP}px` }}>
+                            {Array.from({ length: seatsPerRow }, (_, seatIndex) => {
                                 const row = rowIndex + 1;
                                 const seat = seatIndex + 1;
 
                                 return (
-                                    <div
-                                        key={seatIndex}
-                                        onClick={() => handleSeatClick(row, seat)}
-                                        style={getSeatStyle(row, seat)}
-                                    >
+                                    <div key={seatIndex} onClick={() => handleSeatClick(row, seat)} style={getSeatStyle(row, seat)}>
                                         {seat}
                                     </div>
                                 );
@@ -142,55 +130,49 @@ export function SeatMap({
             </div>
 
             {/* Легенда */}
-            <div style={{
-                marginTop: '32px',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '24px',
-                fontSize: '14px',
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: 'transparent',
-                        border: '2px solid #616161',
-                        borderRadius: '4px',
-                    }}></div>
-                    <span style={{ color: '#999' }}>Свободно</span>
+            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'center', gap: `${SEAT_MAP.LEGEND_GAP}px`, fontSize: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: `${SEAT_COLORS.LEGEND_GAP}px` }}>
+                    <div
+                        style={{
+                            width: `${SEAT_COLORS.LEGEND_INDICATOR_SIZE}px`,
+                            height: `${SEAT_COLORS.LEGEND_INDICATOR_SIZE}px`,
+                            backgroundColor: SEAT_COLORS.AVAILABLE_BACKGROUND,
+                            border: `2px solid ${SEAT_COLORS.AVAILABLE_BORDER}`,
+                            borderRadius: '4px',
+                        }}
+                    ></div>
+                    <span style={{ color: SEAT_COLORS.TEXT_COLOR }}>Свободно</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: '#64B5F6',
-                        border: '2px solid #64B5F6',
-                        borderRadius: '4px',
-                    }}></div>
-                    <span style={{ color: '#999' }}>Выбрано</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: `${SEAT_COLORS.LEGEND_GAP}px` }}>
+                    <div
+                        style={{
+                            width: `${SEAT_COLORS.LEGEND_INDICATOR_SIZE}px`,
+                            height: `${SEAT_COLORS.LEGEND_INDICATOR_SIZE}px`,
+                            backgroundColor: SEAT_COLORS.SELECTED_BACKGROUND,
+                            border: `2px solid ${SEAT_COLORS.SELECTED_BORDER}`,
+                            borderRadius: '4px',
+                        }}
+                    ></div>
+                    <span style={{ color: SEAT_COLORS.TEXT_COLOR }}>Выбрано</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: '#E57373',
-                        border: '2px solid #E57373',
-                        borderRadius: '4px',
-                    }}></div>
-                    <span style={{ color: '#999' }}>Занято</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: `${SEAT_COLORS.LEGEND_GAP}px` }}>
+                    <div
+                        style={{
+                            width: `${SEAT_COLORS.LEGEND_INDICATOR_SIZE}px`,
+                            height: `${SEAT_COLORS.LEGEND_INDICATOR_SIZE}px`,
+                            backgroundColor: SEAT_COLORS.BOOKED_BACKGROUND,
+                            border: `2px solid ${SEAT_COLORS.BOOKED_BORDER}`,
+                            borderRadius: '4px',
+                        }}
+                    ></div>
+                    <span style={{ color: SEAT_COLORS.TEXT_COLOR }}>Занято</span>
                 </div>
             </div>
 
-
             {/* Выбранные места */}
             {selectedSeats.length > 0 && (
-                <div style={{
-                    marginTop: '24px',
-                    textAlign: 'center',
-                }}>
-                    <p style={{ fontSize: '14px', color: '#999' }}>
-                        Выбрано мест: {selectedSeats.length}
-                    </p>
+                <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '14px', color: SEAT_COLORS.TEXT_COLOR }}>Выбрано мест: {selectedSeats.length}</p>
                     <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                         {selectedSeats.map((s) => `ряд ${s.row}, место ${s.seat}`).join(' | ')}
                     </p>

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
+import { CACHE_TIME, HTTP_STATUS, TIME } from '@/constants';
 import type {
   Movie,
   MovieSessionFromBackend,
@@ -11,21 +12,22 @@ import type {
   Settings
 } from '@/types';
 
-// получаем список всех фильмов
+// Получаем список всех фильмов
 export const getMovies = async (): Promise<Movie[]> => {
   return apiClient.get<Movie[]>('/movies');
 };
 
-// получаем сеансы конкретного фильма
+// Получаем сеансы конкретного фильма
 export const getMovieSession = async (movieId: number): Promise<MovieSessionFromBackend[]> => {
   return apiClient.get<MovieSessionFromBackend[]>(`/movies/${movieId}/sessions`);
 };
-// [ук react-query для списка фильмов (кэшируем через QueryClient)
+
+// Хук react-query для списка фильмов (кэшируем через QueryClient)
 export const useMovies = () => {
   return useQuery<Movie[]>({
     queryKey: ['movies'],
     queryFn: getMovies,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CACHE_TIME.MOVIES,
   });
 };
 
@@ -34,7 +36,7 @@ export const useMovieSession = (movieId: number) => {
   return useQuery<MovieSessionFromBackend[]>({
     queryKey: ['movieSessions', movieId],
     queryFn: () => getMovieSession(movieId),
-    staleTime: 1000 * 60 * 2,
+    staleTime: CACHE_TIME.MOVIE_SESSIONS,
     enabled: !!movieId,
   });
 };
@@ -47,11 +49,11 @@ export const useCinemas = () => {
   return useQuery<Cinema[]>({
     queryKey: ['cinemas'],
     queryFn: getCinemas,
-    staleTime: 1000 * 60 * 10, // 10 минут
+    staleTime: CACHE_TIME.CINEMAS,
   });
 };
 
-// получаем сеансы кинотеатра
+// Получаем сеансы кинотеатра
 export const getCinemaSessions = async (cinemaId: number): Promise<MovieSessionFromBackend[]> => {
   return apiClient.get<MovieSessionFromBackend[]>(`/cinemas/${cinemaId}/sessions`);
 };
@@ -61,46 +63,57 @@ export const useCinemaSessions = (cinemaId: number) => {
   return useQuery<MovieSessionFromBackend[]>({
     queryKey: ['cinemaSessions', cinemaId],
     queryFn: () => getCinemaSessions(cinemaId),
-    staleTime: 1000 * 60 * 2,
+    staleTime: CACHE_TIME.MOVIE_SESSIONS,
     enabled: !!cinemaId,
   });
 };
 
-// получаем детали сеанса для бронирования
+// Получаем детали сеанса для бронирования
 export const getMovieSessionDetails = async (sessionId: number): Promise<MovieSessionDetails> => {
   return apiClient.get<MovieSessionDetails>(`/movieSessions/${sessionId}`);
 };
+
+interface ErrorWithMessage {
+  message?: string;
+}
 
 // Хук для деталей сеанса
 export const useMovieSessionDetails = (sessionId: number, enabled: boolean = true) => {
   return useQuery<MovieSessionDetails>({
     queryKey: ['movieSessionDetails', sessionId],
     queryFn: () => getMovieSessionDetails(sessionId),
-    staleTime: 1000 * 60 * 1,
+    staleTime: CACHE_TIME.USER_BOOKINGS,
     enabled: !!sessionId && enabled,
-    retry: (failureCount, error: any) => {
-      // не повторяем запрос если ошибка 401 (неавторизован)
-      if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+    retry: (failureCount, error) => {
+      const errorMessage = (error as ErrorWithMessage)?.message || '';
+      // Не повторяем запрос если ошибка 401 (неавторизован)
+      if (
+        errorMessage.includes(HTTP_STATUS.UNAUTHORIZED.toString()) ||
+        errorMessage.toLowerCase().includes('unauthorized')
+      ) {
         return false;
       }
-      return failureCount < 3;
+      return failureCount < TIME.RETRY_ATTEMPTS;
     },
   });
 };
 
-// бронирование мест
+// Бронирование мест
 export const bookSeats = async (sessionId: number, seats: Seat[]): Promise<{ bookingId: string }> => {
-  // конвертируем seat[] в формат api
-  const apiSeats = seats.map(seat => ({
+  // Конвертируем seat[] в формат API
+  const apiSeats: SeatFromAPI[] = seats.map(seat => ({
     rowNumber: seat.row,
     seatNumber: seat.seat
   }));
 
-  const result = await apiClient.post<{ bookingId: string }>(`/movieSessions/${sessionId}/bookings`, { seats: apiSeats });
+  const result = await apiClient.post<{ bookingId: string }>(
+    `/movieSessions/${sessionId}/bookings`,
+    { seats: apiSeats }
+  );
   return result;
 };
 
-// получаем билеты пользователя
+// Получаем билеты пользователя
 export const getUserBookings = async (): Promise<Booking[]> => {
   return apiClient.get<Booking[]>('/me/bookings');
 };
@@ -110,16 +123,16 @@ export const useUserBookings = () => {
   return useQuery<Booking[]>({
     queryKey: ['userBookings'],
     queryFn: getUserBookings,
-    staleTime: 1000 * 60 * 1,
+    staleTime: CACHE_TIME.USER_BOOKINGS,
   });
 };
 
-// оплата билета
+// Оплата билета
 export const payBooking = async (bookingId: string): Promise<void> => {
   return apiClient.post<void>(`/bookings/${bookingId}/payments`);
 };
 
-// получаем настройки системы
+// Получаем настройки системы
 export const getSettings = async (): Promise<Settings> => {
   return apiClient.get<Settings>('/settings');
 };
@@ -129,6 +142,6 @@ export const useSettings = () => {
   return useQuery<Settings>({
     queryKey: ['settings'],
     queryFn: getSettings,
-    staleTime: 1000 * 60 * 10, // 10 минут
+    staleTime: CACHE_TIME.SETTINGS,
   });
 };

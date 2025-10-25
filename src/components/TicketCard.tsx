@@ -8,6 +8,10 @@ import { ErrorToast } from './ErrorToast';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { Button } from '@mui/material';
 
+interface ErrorWithMessage {
+    message?: string;
+}
+
 interface TicketCardProps {
     booking: Booking;
     movie: Movie;
@@ -33,8 +37,9 @@ export function TicketCard({
         try {
             await payBooking(booking.id);
             onPaymentSuccess();
-        } catch (error: any) {
-            showError(error.message);
+        } catch (error) {
+            const errorMessage = (error as ErrorWithMessage)?.message || 'Ошибка при оплате';
+            showError(errorMessage);
         } finally {
             setIsPaying(false);
         }
@@ -42,18 +47,18 @@ export function TicketCard({
 
     const sessionTime = new Date(booking.bookedAt).toLocaleString('ru-RU');
     const isExpired =
-        !booking.isPaid &&
+        booking.status === 'unpaid' &&
         new Date().getTime() - new Date(booking.bookedAt).getTime() > timeLimitSeconds * 1000;
 
     const getStatusColor = () => {
-        if (!booking.isPaid) {
+        if (booking.status === 'unpaid') {
             return isExpired ? 'bg-red-600' : 'bg-yellow-600';
         }
         return 'bg-green-600';
     };
 
     const getStatusText = () => {
-        if (!booking.isPaid) {
+        if (booking.status === 'unpaid') {
             return isExpired ? 'Истек срок оплаты' : 'Неоплачен';
         }
         return 'Оплачен';
@@ -89,7 +94,7 @@ export function TicketCard({
 
                 {/* Правая колонка - кнопка оплаты и таймер */}
                 <div className="flex items-center gap-4">
-                    {!booking.isPaid && !isExpired && (
+                    {booking.status === 'unpaid' && !isExpired && (
                         <>
                             <Button
                                 variant="outlined"

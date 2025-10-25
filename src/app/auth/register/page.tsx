@@ -46,8 +46,9 @@ export default function RegisterPage() {
         try {
             await register(formData.username, formData.password, formData.passwordConfirmation || '');
             router.push('/my-tickets');
-        } catch (error: any) {
-            setErrors({ general: error.message });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка';
+            setErrors({ general: errorMessage });
         } finally {
             setIsSubmitting(false);
         }

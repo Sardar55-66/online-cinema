@@ -9,14 +9,22 @@ export type SeatFromAPI = {
     seatNumber: number;
 };
 
+// Константы для статусов бронирования
+export const BOOKING_STATUS = {
+    UNPAID: 'unpaid',
+    PAID: 'paid',
+} as const;
+
+export type BookingStatus = typeof BOOKING_STATUS[keyof typeof BOOKING_STATUS];
+
 export type Booking = {
-    id: string; // Изменено с number на string
+    id: string;
     movieSessionId: number;
     movieId: number;
     cinemaId: number;
     userId: number;
-    seats: SeatFromAPI[]; // Изменено с Seat[] на SeatFromAPI[]
+    seats: SeatFromAPI[];
     bookedAt: string;
     paidAt?: string;
-    isPaid: boolean; // Изменено с status на isPaid
+    status: BookingStatus;
 };

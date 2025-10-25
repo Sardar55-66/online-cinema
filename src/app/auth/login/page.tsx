@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '@/app/lib/auth';
 import { LoginFormData, validateLoginForm } from '@/app/lib/validators';
 import { Button } from '@mui/material';
-import { SuccessToast } from '@/components/SuccessToast';
+import { TIME } from '@/constants';
 
 export default function LoginPage() {
     const [formData, setFormData] = useState<LoginFormData>({
@@ -47,8 +47,9 @@ export default function LoginPage() {
         try {
             await login(formData.username, formData.password);
             router.push('/my-tickets');
-        } catch (error: any) {
-            setErrors({ general: error.message });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка';
+            setErrors({ general: errorMessage });
         } finally {
             setIsSubmitting(false);
         }
@@ -65,7 +66,7 @@ export default function LoginPage() {
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2 text-left">
                                 Имя пользователя
                             </label>
-                            
+
                             <input
                                 type="text"
                                 id="username"

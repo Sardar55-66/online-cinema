@@ -1,64 +1,64 @@
 import { User } from '@/app/lib/auth';
+import { VALIDATION_RULES, VALIDATION_MESSAGES } from '@/constants';
 
-export interface AuthService {
-  validateLoginCredentials(username: string, password: string): string | null;
-  validateRegistrationData(username: string, password: string, passwordConfirmation: string): string | null;
-  isUserAuthenticated(user: User | null): boolean;
-  shouldRedirectToAuth(user: User | null, isLoading: boolean): boolean;
-}
+const MIN_USER_ID = 0;
 
-export class CinemaAuthService implements AuthService {
-  validateLoginCredentials(username: string, password: string): string | null {
-    if (!username.trim()) {
-      return 'Имя пользователя обязательно';
-    }
-    if (!password) {
-      return 'Пароль обязателен';
-    }
-    return null;
+export const validateLoginCredentials = (
+  username: string,
+  password: string
+): string | null => {
+  if (!username.trim()) {
+    return VALIDATION_MESSAGES.USERNAME_REQUIRED;
+  }
+  if (!password) {
+    return VALIDATION_MESSAGES.PASSWORD_REQUIRED;
+  }
+  return null;
+};
+
+export const validateRegistrationData = (
+  username: string,
+  password: string,
+  passwordConfirmation: string
+): string | null => {
+  // Валидация username
+  if (!username.trim()) {
+    return VALIDATION_MESSAGES.USERNAME_REQUIRED;
+  }
+  if (username.length < VALIDATION_RULES.USERNAME_MIN_LENGTH) {
+    return VALIDATION_MESSAGES.USERNAME_TOO_SHORT;
   }
 
-  validateRegistrationData(username: string, password: string, passwordConfirmation: string): string | null {
-    // Валидация username
-    if (!username.trim()) {
-      return 'Имя пользователя обязательно';
-    } else if (username.length < 8) {
-      return 'Имя пользователя должно содержать минимум 8 символов';
-    }
-
-    // Валидация password
-    if (!password) {
-      return 'Пароль обязателен';
-    } else {
-      if (password.length < 8) {
-        return 'Пароль должен содержать минимум 8 символов';
-      }
-      if (!/[A-Z]/.test(password)) {
-        return 'Пароль должен содержать минимум 1 заглавную букву';
-      }
-      if (!/\d/.test(password)) {
-        return 'Пароль должен содержать минимум 1 цифру';
-      }
-    }
-
-    // Валидация подтверждения пароля
-    if (!passwordConfirmation) {
-      return 'Подтверждение пароля обязательно';
-    } else if (password !== passwordConfirmation) {
-      return 'Пароли не совпадают';
-    }
-
-    return null;
+  // Валидация password
+  if (!password) {
+    return VALIDATION_MESSAGES.PASSWORD_REQUIRED;
   }
 
-  isUserAuthenticated(user: User | null): boolean {
-    return user !== null && user.id > 0;
+  if (password.length < VALIDATION_RULES.PASSWORD_MIN_LENGTH) {
+    return VALIDATION_MESSAGES.PASSWORD_TOO_SHORT;
+  }
+  if (VALIDATION_RULES.PASSWORD_REQUIRES_UPPERCASE && !/[A-Z]/.test(password)) {
+    return VALIDATION_MESSAGES.PASSWORD_NO_UPPERCASE;
+  }
+  if (VALIDATION_RULES.PASSWORD_REQUIRES_NUMBER && !/\d/.test(password)) {
+    return VALIDATION_MESSAGES.PASSWORD_NO_NUMBER;
   }
 
-  shouldRedirectToAuth(user: User | null, isLoading: boolean): boolean {
-    return !isLoading && !this.isUserAuthenticated(user);
+  // Валидация подтверждения пароля
+  if (!passwordConfirmation) {
+    return VALIDATION_MESSAGES.PASSWORD_CONFIRMATION_REQUIRED;
   }
-}
+  if (password !== passwordConfirmation) {
+    return VALIDATION_MESSAGES.PASSWORDS_DONT_MATCH;
+  }
 
-// Экспортируем singleton instance
-export const authService = new CinemaAuthService();
+  return null;
+};
+
+export const isUserAuthenticated = (user: User | null): boolean => {
+  return user !== null && user.id > MIN_USER_ID;
+};
+
+export const shouldRedirectToAuth = (user: User | null, isLoading: boolean): boolean => {
+  return !isLoading && !isUserAuthenticated(user);
+};

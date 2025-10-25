@@ -11,9 +11,14 @@ import { ErrorToast } from '@/components/ErrorToast';
 import { SuccessToast } from '@/components/SuccessToast';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useSuccessHandler } from '@/hooks/useSuccessHandler';
-import { bookingService } from '@/services/bookingService';
+import { validateSeatSelection } from '@/services/bookingService';
 import { Button } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { TIME, SUCCESS_MESSAGES } from '@/constants';
+
+interface ErrorWithMessage {
+    message?: string;
+}
 
 export default function SessionPage() {
     const { id, sessionId } = useParams();
@@ -46,7 +51,7 @@ export default function SessionPage() {
             return;
         }
 
-        const validationError = bookingService.validateSeatSelection(selectedSeats, sessionDetails);
+        const validationError = validateSeatSelection(selectedSeats, sessionDetails);
         if (validationError) {
             showError(validationError);
             return;
@@ -60,13 +65,14 @@ export default function SessionPage() {
 
             await queryClient.invalidateQueries({ queryKey: ['userBookings'] });
 
-            showSuccess('Места успешно забронированы!');
+            showSuccess(SUCCESS_MESSAGES.BOOKING_CREATED);
             setSelectedSeats([]);
             setTimeout(() => {
                 router.push('/my-tickets');
-            }, 2000);
-        } catch (error: any) {
-            showError(error.message || 'Ошибка при бронировании мест');
+            }, TIME.REDIRECT_DELAY_MS);
+        } catch (error) {
+            const errorMessage = (error as ErrorWithMessage)?.message || 'Ошибка при бронировании мест';
+            showError(errorMessage);
         } finally {
             setIsBooking(false);
         }

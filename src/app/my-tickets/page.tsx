@@ -84,7 +84,7 @@ export default function TicketsPage() {
 
   // Фильтруем истекшие билеты
   const validBookings = (bookings || []).filter((booking) => {
-    if (!booking.isPaid) {
+    if (booking.status === 'unpaid') {
       const timeLimit = settings?.paymentTimeLimitSeconds || 180;
       const isExpired =
         new Date().getTime() - new Date(booking.bookedAt).getTime() >
@@ -95,19 +95,19 @@ export default function TicketsPage() {
   });
 
   // Группируем билеты по статусам
-  const unpaidBookings = validBookings.filter((b) => !b.isPaid);
+  const unpaidBookings = validBookings.filter((b) => b.status === 'unpaid');
 
   // Разделяем оплаченные билеты на будущие и прошедшие
   const currentTime = new Date().getTime();
   const futureBookings = validBookings.filter((b) => {
-    if (!b.isPaid) return false;
+    if (b.status !== 'paid') return false;
     const sessionStartTime = sessionTimes[b.movieSessionId];
     if (!sessionStartTime) return true; // Если время неизвестно, показываем как будущий
     return new Date(sessionStartTime).getTime() > currentTime;
   });
 
   const pastBookings = validBookings.filter((b) => {
-    if (!b.isPaid) return false;
+    if (b.status !== 'paid') return false;
     const sessionStartTime = sessionTimes[b.movieSessionId];
     if (!sessionStartTime) return false;
     return new Date(sessionStartTime).getTime() <= currentTime;
